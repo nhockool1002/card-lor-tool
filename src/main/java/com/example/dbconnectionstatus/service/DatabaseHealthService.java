@@ -13,21 +13,37 @@ import java.sql.ResultSet;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class DatabaseHealthService {
 
+    // SIT DataSources
     @Autowired
-    @Qualifier("primaryDataSource")
-    private DataSource primaryDataSource;
+    @Qualifier("sitMssqlDataSource")
+    private DataSource sitMssqlDataSource;
 
     @Autowired
-    @Qualifier("db2BosprodDataSource")
-    private DataSource db2BosprodDataSource;
+    @Qualifier("sitDb2BosprodDataSource")
+    private DataSource sitDb2BosprodDataSource;
 
     @Autowired
-    @Qualifier("db2FepDataSource")
-    private DataSource db2FepDataSource;
+    @Qualifier("sitDb2FepDataSource")
+    private DataSource sitDb2FepDataSource;
+
+    // UAT DataSources
+    @Autowired
+    @Qualifier("uatMssqlDataSource")
+    private DataSource uatMssqlDataSource;
+
+    @Autowired
+    @Qualifier("uatDb2BosprodDataSource")
+    private DataSource uatDb2BosprodDataSource;
+
+    @Autowired
+    @Qualifier("uatDb2FepDataSource")
+    private DataSource uatDb2FepDataSource;
 
     @Autowired
     private Environment environment;
@@ -35,27 +51,72 @@ public class DatabaseHealthService {
     public List<ConnectionStatus> getAllConnectionStatuses() {
         List<ConnectionStatus> statuses = new ArrayList<>();
         
-        String activeProfile = environment.getActiveProfiles().length > 0 ? 
-            environment.getActiveProfiles()[0] : "sit";
+        // Check SIT Databases
+        statuses.add(checkConnection("MSSQL Primary (SIT)", 
+            "MSSQL", "172.20.17.48", "", "portalusr", sitMssqlDataSource, "SIT"));
         
-        // Check MSSQL Primary
-        statuses.add(checkConnection("MSSQL Primary (" + activeProfile.toUpperCase() + ")", 
-            "MSSQL", getMSSQLHost(activeProfile), "", getMSSQLUsername(), primaryDataSource));
+        statuses.add(checkConnection("DB2 BOSPROD (SIT)", 
+            "DB2", "172.20.17.21", "BOSPROD", "cardpro", sitDb2BosprodDataSource, "SIT"));
         
-        // Check DB2 BOSPROD
-        statuses.add(checkConnection("DB2 BOSPROD (" + activeProfile.toUpperCase() + ")", 
-            "DB2", getDB2Host(activeProfile), "BOSPROD", getDB2Username(), db2BosprodDataSource));
+        statuses.add(checkConnection("DB2 FEP (SIT)", 
+            "DB2", "172.20.17.21", "FEPPROD", "cardpro", sitDb2FepDataSource, "SIT"));
         
-        // Check DB2 FEP
-        statuses.add(checkConnection("DB2 FEP (" + activeProfile.toUpperCase() + ")", 
-            "DB2", getDB2Host(activeProfile), "FEPPROD", getDB2FepUsername(activeProfile), db2FepDataSource));
+        // Check UAT Databases
+        statuses.add(checkConnection("MSSQL Primary (UAT)", 
+            "MSSQL", "172.20.15.84", "", "portalusr", uatMssqlDataSource, "UAT"));
+        
+        statuses.add(checkConnection("DB2 BOSPROD (UAT)", 
+            "DB2", "172.20.15.52", "BOSPROD", "cardpro", uatDb2BosprodDataSource, "UAT"));
+        
+        statuses.add(checkConnection("DB2 FEP (UAT)", 
+            "DB2", "172.20.15.52", "FEPPROD", "cardpro", uatDb2FepDataSource, "UAT"));
         
         return statuses;
     }
 
+    public List<ConnectionStatus> getConnectionStatusesByEnvironment(String environment) {
+        List<ConnectionStatus> allStatuses = getAllConnectionStatuses();
+        if (environment == null || environment.equalsIgnoreCase("ALL")) {
+            return allStatuses;
+        }
+        
+        return allStatuses.stream()
+                .filter(status -> status.getEnvironment().equalsIgnoreCase(environment))
+                .collect(Collectors.toList());
+    }
+
+    public Map<String, Long> getEnvironmentSummary() {
+        List<ConnectionStatus> allStatuses = getAllConnectionStatuses();
+        
+        Map<String, Long> sitSummary = allStatuses.stream()
+                .filter(status -> "SIT".equals(status.getEnvironment()))
+                .collect(Collectors.groupingBy(
+                    status -> status.isConnected() ? "connected" : "disconnected",
+                    Collectors.counting()
+                ));
+
+        Map<String, Long> uatSummary = allStatuses.stream()
+                .filter(status -> "UAT".equals(status.getEnvironment()))
+                .collect(Collectors.groupingBy(
+                    status -> status.isConnected() ? "connected" : "disconnected",
+                    Collectors.counting()
+                ));
+
+        Map<String, Long> summary = new java.util.HashMap<>();
+        summary.put("sitConnected", sitSummary.getOrDefault("connected", 0L));
+        summary.put("sitDisconnected", sitSummary.getOrDefault("disconnected", 0L));
+        summary.put("uatConnected", uatSummary.getOrDefault("connected", 0L));
+        summary.put("uatDisconnected", uatSummary.getOrDefault("disconnected", 0L));
+        summary.put("totalConnected", sitSummary.getOrDefault("connected", 0L) + uatSummary.getOrDefault("connected", 0L));
+        summary.put("totalDisconnected", sitSummary.getOrDefault("disconnected", 0L) + uatSummary.getOrDefault("disconnected", 0L));
+        
+        return summary;
+    }
+
     private ConnectionStatus checkConnection(String name, String type, String host, 
-                                           String database, String username, DataSource dataSource) {
+                                           String database, String username, DataSource dataSource, String environment) {
         ConnectionStatus status = new ConnectionStatus(name, type, host, database, username);
+        status.setEnvironment(environment);
         long startTime = System.currentTimeMillis();
         
         try (Connection connection = dataSource.getConnection()) {
@@ -91,26 +152,5 @@ public class DatabaseHealthService {
             default:
                 return "SELECT 1";
         }
-    }
-
-    private String getMSSQLHost(String profile) {
-        return "sit".equals(profile) ? "172.20.17.48" : "172.20.15.84";
-    }
-
-    private String getDB2Host(String profile) {
-        return "sit".equals(profile) ? "172.20.17.21" : "172.20.15.52";
-    }
-
-    private String getMSSQLUsername() {
-        return "portalusr";
-    }
-
-    private String getDB2Username() {
-        return "cardpro";
-    }
-
-    private String getDB2FepUsername(String profile) {
-        // UAT FEP có username khác với BOSPROD
-        return "cardpro";
     }
 }

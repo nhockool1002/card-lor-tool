@@ -5,33 +5,130 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Database Connection Status</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         .status-connected { color: #28a745; }
         .status-disconnected { color: #dc3545; }
         .card-header { background: linear-gradient(45deg, #007bff, #0056b3); color: white; }
+        .status-bar {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .status-bar.has-issues {
+            background: linear-gradient(135deg, #dc3545, #fd7e14);
+        }
+        .env-badge {
+            font-size: 0.75rem;
+            padding: 2px 8px;
+            border-radius: 12px;
+        }
+        .env-sit { background-color: #007bff; }
+        .env-uat { background-color: #28a745; }
+        .dropdown-toggle::after { margin-left: 8px; }
     </style>
 </head>
 <body>
     <div class="container mt-4">
+        <!-- Status Bar -->
+        <div class="status-bar" th:classappend="${environmentSummary.totalDisconnected > 0} ? 'has-issues' : ''">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h5 class="mb-1">
+                        <i class="fas fa-server me-2"></i>
+                        Database Connection Monitor
+                    </h5>
+                    <div class="row mt-2">
+                        <div class="col-md-4">
+                            <small>
+                                <i class="fas fa-circle text-info me-1"></i>
+                                <strong>SIT:</strong> 
+                                <span th:text="${environmentSummary.sitConnected}">0</span>/<span th:text="${environmentSummary.sitConnected + environmentSummary.sitDisconnected}">3</span> Connected
+                            </small>
+                        </div>
+                        <div class="col-md-4">
+                            <small>
+                                <i class="fas fa-circle text-warning me-1"></i>
+                                <strong>UAT:</strong> 
+                                <span th:text="${environmentSummary.uatConnected}">0</span>/<span th:text="${environmentSummary.uatConnected + environmentSummary.uatDisconnected}">3</span> Connected
+                            </small>
+                        </div>
+                        <div class="col-md-4">
+                            <small>
+                                <i class="fas fa-globe me-1"></i>
+                                <strong>Total:</strong> 
+                                <span th:text="${environmentSummary.totalConnected}">0</span>/<span th:text="${environmentSummary.totalConnected + environmentSummary.totalDisconnected}">6</span> Connected
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 text-end">
+                    <div class="d-flex justify-content-end align-items-center">
+                        <span class="me-3">
+                            <i class="fas fa-clock me-1"></i>
+                            <span th:text="${#temporals.format(refreshTime, 'HH:mm:ss')}">Time</span>
+                        </span>
+                        <span th:if="${environmentSummary.totalDisconnected == 0}" class="badge bg-light text-dark">
+                            <i class="fas fa-check-circle me-1"></i>All Systems Operational
+                        </span>
+                        <span th:if="${environmentSummary.totalDisconnected > 0}" class="badge bg-light text-dark">
+                            <i class="fas fa-exclamation-triangle me-1"></i>
+                            <span th:text="${environmentSummary.totalDisconnected}">0</span> Issues Detected
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="row">
             <div class="col-12">
                 <div class="card">
                     <div class="card-header">
-                        <h1 class="mb-0">
-                            <i class="fas fa-database"></i>
-                            Database Connection Status - <span th:text="${environment}">Environment</span>
-                        </h1>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h1 class="mb-0">
+                                <i class="fas fa-database me-2"></i>
+                                Database Connection Status
+                            </h1>
+                            <div class="dropdown">
+                                <button class="btn btn-outline-light dropdown-toggle" type="button" id="environmentDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="fas fa-filter me-2"></i>
+                                    <span th:if="${selectedEnvironment == 'ALL'}">All Environments</span>
+                                    <span th:if="${selectedEnvironment == 'SIT'}">SIT Environment</span>
+                                    <span th:if="${selectedEnvironment == 'UAT'}">UAT Environment</span>
+                                </button>
+                                <ul class="dropdown-menu" aria-labelledby="environmentDropdown">
+                                    <li><a class="dropdown-item" href="?env=ALL" th:classappend="${selectedEnvironment == 'ALL'} ? 'active' : ''">
+                                        <i class="fas fa-globe me-2"></i>All Environments
+                                    </a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" href="?env=SIT" th:classappend="${selectedEnvironment == 'SIT'} ? 'active' : ''">
+                                        <i class="fas fa-vial me-2"></i>SIT Environment
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="?env=UAT" th:classappend="${selectedEnvironment == 'UAT'} ? 'active' : ''">
+                                        <i class="fas fa-user-check me-2"></i>UAT Environment
+                                    </a></li>
+                                </ul>
+                            </div>
+                        </div>
                     </div>
                     <div class="card-body">
-                        <div class="alert alert-info">
-                            <strong>Last Updated:</strong> <span th:text="${refreshTime}">Time</span>
+                        <div class="alert alert-info d-flex justify-content-between align-items-center">
+                            <span>
+                                <strong>Last Updated:</strong> <span th:text="${#temporals.format(refreshTime, 'dd/MM/yyyy HH:mm:ss')}">Time</span>
+                            </span>
+                            <span class="badge bg-primary">
+                                Auto-refresh: 30s
+                            </span>
                         </div>
                         
                         <div class="row">
                             <div class="col-md-6 col-lg-4 mb-3" th:each="status : ${connectionStatuses}">
-                                <div class="card">
-                                    <div class="card-header">
+                                <div class="card h-100">
+                                    <div class="card-header d-flex justify-content-between align-items-center">
                                         <h5 class="card-title mb-0" th:text="${status.name}">Database Name</h5>
+                                        <span class="env-badge" th:classappend="${status.environment == 'SIT'} ? 'env-sit' : 'env-uat'" th:text="${status.environment}">ENV</span>
                                     </div>
                                     <div class="card-body">
                                         <p><strong>Type:</strong> <span th:text="${status.type}">Type</span></p>
@@ -41,8 +138,15 @@
                                         <p><strong>Status:</strong> 
                                             <span th:class="${status.connected} ? 'status-connected' : 'status-disconnected'"
                                                   th:text="${status.status}">Status</span>
+                                            <i th:if="${status.connected}" class="fas fa-check-circle ms-1 text-success"></i>
+                                            <i th:if="${!status.connected}" class="fas fa-times-circle ms-1 text-danger"></i>
                                         </p>
-                                        <p><strong>Response Time:</strong> <span th:text="${status.responseTimeMs}">0</span> ms</p>
+                                        <p><strong>Response Time:</strong> 
+                                            <span th:text="${status.responseTimeMs}">0</span> ms
+                                            <i th:if="${status.responseTimeMs < 1000}" class="fas fa-tachometer-alt ms-1 text-success" title="Fast"></i>
+                                            <i th:if="${status.responseTimeMs >= 1000 and status.responseTimeMs < 5000}" class="fas fa-tachometer-alt ms-1 text-warning" title="Slow"></i>
+                                            <i th:if="${status.responseTimeMs >= 5000}" class="fas fa-tachometer-alt ms-1 text-danger" title="Very Slow"></i>
+                                        </p>
                                         <div th:if="${status.errorMessage}" class="alert alert-danger">
                                             <small th:text="${status.errorMessage}">Error message</small>
                                         </div>
@@ -50,15 +154,41 @@
                                 </div>
                             </div>
                         </div>
+                        
+                        <div th:if="${#lists.isEmpty(connectionStatuses)}" class="text-center py-5">
+                            <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                            <h4 class="text-muted">No databases found for the selected environment</h4>
+                            <p class="text-muted">Try selecting a different environment filter</p>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         // Auto refresh every 30 seconds
-        setTimeout(function(){ location.reload(); }, 30000);
+        setTimeout(function(){ 
+            // Preserve current environment filter
+            const urlParams = new URLSearchParams(window.location.search);
+            const currentEnv = urlParams.get('env') || 'ALL';
+            window.location.href = '?env=' + currentEnv; 
+        }, 30000);
+
+        // Add fade-in animation
+        document.addEventListener('DOMContentLoaded', function() {
+            const cards = document.querySelectorAll('.card');
+            cards.forEach((card, index) => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+                setTimeout(() => {
+                    card.style.transition = 'opacity 0.5s, transform 0.5s';
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, index * 100);
+            });
+        });
     </script>
 </body>
 </html>
