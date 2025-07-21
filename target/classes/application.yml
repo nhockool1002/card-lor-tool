@@ -1,0 +1,93 @@
+spring:
+  profiles:
+    active: sit  # Có thể thay đổi thành 'uat' cho môi trường UAT
+
+---
+# SIT Configuration
+spring:
+  config:
+    activate:
+      on-profile: sit
+  
+  # Primary datasource (MSSQL SIT)
+  datasource:
+    driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+    url: jdbc:sqlserver://172.20.17.48;trustServerCertificate=true
+    username: portalusr
+    password: portal@usr
+    
+    primary:
+      driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+      url: jdbc:sqlserver://172.20.17.48;trustServerCertificate=true
+      username: portalusr
+      password: portal@usr
+    
+    # DB2 BOSPROD SIT
+    db2-bosprod:
+      driver-class-name: com.ibm.db2.jcc.DB2Driver
+      url: jdbc:db2://172.20.17.21:50000/BOSPROD
+      username: cardpro
+      password: sacombank@123456789
+      jpa:
+        database-platform: org.hibernate.dialect.DB2Dialect
+    
+    # DB2 FEP SIT
+    db2-fep:
+      driver-class-name: com.ibm.db2.jcc.DB2Driver
+      url: jdbc:db2://172.20.17.21:50000/FEPPROD
+      username: cardpro
+      password: sacombank@123456789
+      jpa:
+        database-platform: org.hibernate.dialect.DB2Dialect
+
+---
+# UAT Configuration
+spring:
+  config:
+    activate:
+      on-profile: uat
+  
+  # Primary datasource (MSSQL UAT)
+  datasource:
+    driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+    url: jdbc:sqlserver://172.20.15.84;trustServerCertificate=true
+    username: portalusr
+    password: portal@usr
+    
+    primary:
+      driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+      url: jdbc:sqlserver://172.20.15.84;trustServerCertificate=true
+      username: portalusr
+      password: portal@usr
+    
+    # DB2 BOSPROD UAT
+    db2-bosprod:
+      driver-class-name: com.ibm.db2.jcc.DB2Driver
+      url: jdbc:db2://172.20.15.52:50000/BOSPROD
+      username: cardpro
+      password: sacombank@123456789
+      jpa:
+        database-platform: org.hibernate.dialect.DB2Dialect
+    
+    # DB2 FEP UAT
+    db2-fep:
+      driver-class-name: com.ibm.db2.jcc.DB2Driver
+      url: jdbc:db2://172.20.15.52:50000/FEPPROD
+      username: cardpro
+      password: cardpro
+      jpa:
+        database-platform: org.hibernate.dialect.DB2Dialect
+
+# Server configuration
+server:
+  port: 8080
+
+# Management endpoints
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
