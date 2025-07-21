@@ -8,6 +8,7 @@ public class ConnectionStatus {
     private String host;
     private String database;
     private String username;
+    private String environment;
     private boolean connected;
     private String status;
     private String errorMessage;
@@ -65,6 +66,14 @@ public class ConnectionStatus {
 
     public void setUsername(String username) {
         this.username = username;
+    }
+
+    public String getEnvironment() {
+        return environment;
+    }
+
+    public void setEnvironment(String environment) {
+        this.environment = environment;
     }
 
     public boolean isConnected() {

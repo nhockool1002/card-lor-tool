@@ -1,116 +1,102 @@
 # Database Connection Status Monitor
 
-Ứng dụng Spring Boot để giám sát trạng thái kết nối của các database DB2 và MSSQL.
+Ứng dụng Java Spring Boot để giám sát trạng thái kết nối đến nhiều database đồng thời trên cả hai môi trường SIT và UAT.
 
-## Các tính năng
+## ✨ Tính năng mới
 
-- Giám sát kết nối đến nhiều database (MSSQL, DB2)
-- Hỗ trợ 2 môi trường: SIT và UAT
-- Giao diện web hiển thị trạng thái real-time
-- REST API để lấy thông tin trạng thái
-- Auto-refresh mỗi 30 giây
-- Hiển thị response time và error messages
+### 🌐 Multi-Environment Monitoring
+- **Không tách môi trường** - Kết nối đồng thời đến cả SIT và UAT
+- **Environment Dropdown** - Cho phép người dùng chọn môi trường để hiển thị
+- **Status Bar** - Hiển thị tổng quan trạng thái kết nối của tất cả môi trường
 
-## Cấu hình Database
+### 📊 Dashboard Features
+- **Real-time Status Bar** - Hiển thị số lượng database connected/disconnected cho từng môi trường
+- **Environment Filter** - Dropdown để chọn hiển thị ALL/SIT/UAT
+- **Visual Indicators** - Icons và màu sắc trực quan cho từng trạng thái
+- **Auto-refresh** - Tự động làm mới mỗi 30 giây với giữ nguyên filter đã chọn
 
-### Môi trường SIT
-- **MSSQL**: 172.20.17.48 (portalusr/portal@usr)
-- **DB2 BOSPROD**: 172.20.17.21:50000/BOSPROD (cardpro/sacombank@123456789)
-- **DB2 FEP**: 172.20.17.21:50000/FEPPROD (cardpro/sacombank@123456789)
+## 🔧 Cấu hình Database
 
-### Môi trường UAT
-- **MSSQL**: 172.20.15.84 (portalusr/portal@usr)
-- **DB2 BOSPROD**: 172.20.15.52:50000/BOSPROD (cardpro/sacombank@123456789)
-- **DB2 FEP**: 172.20.15.52:50000/FEPPROD (cardpro/cardpro)
+### SIT Environment
+| Database | Host | Port | Database | Username | Password |
+|----------|------|------|----------|----------|----------|
+| MSSQL | 172.20.17.48 | 1433 | Default | portalusr | portal@usr |
+| DB2 BOSPROD | 172.20.17.21 | 50000 | BOSPROD | cardpro | sacombank@123456789 |
+| DB2 FEP | 172.20.17.21 | 50000 | FEPPROD | cardpro | sacombank@123456789 |
 
-## Cách chạy ứng dụng
+### UAT Environment  
+| Database | Host | Port | Database | Username | Password |
+|----------|------|------|----------|----------|----------|
+| MSSQL | 172.20.15.84 | 1433 | Default | portalusr | portal@usr |
+| DB2 BOSPROD | 172.20.15.52 | 50000 | BOSPROD | cardpro | sacombank@123456789 |
+| DB2 FEP | 172.20.15.52 | 50000 | FEPPROD | cardpro | cardpro |
 
-### Yêu cầu
-- Java 21+
-- Maven 3.6+
-- Kết nối mạng đến các database servers
+## 🚀 Cách sử dụng
 
 ### Quick Start
-
-#### Chạy môi trường SIT
 ```bash
-chmod +x run-sit.sh
-./run-sit.sh
+# Chạy ứng dụng (monitoring cả SIT và UAT)
+./start.sh
+
+# Hoặc sử dụng Maven trực tiếp
+mvn spring-boot:run
 ```
 
-#### Chạy môi trường UAT  
+### Legacy Scripts (vẫn hoạt động)
 ```bash
-chmod +x run-uat.sh
-./run-uat.sh
+./run-sit.sh   # Same as start.sh
+./run-uat.sh   # Same as start.sh
 ```
 
-### Manual Commands
+### Endpoints
 
-#### Chạy với môi trường SIT (mặc định)
-```bash
-mvn spring-boot:run -Dspring-boot.run.profiles=sit
-```
-
-#### Chạy với môi trường UAT
-```bash
-mvn spring-boot:run -Dspring-boot.run.profiles=uat
-```
-
-#### Build và chạy JAR
-```bash
-mvn clean package
-java -jar target/db-connection-status-0.0.1-SNAPSHOT.jar --spring.profiles.active=sit
-```
-
-## Endpoints
-
-### Web Interface
+#### Web Interface
 - **Dashboard**: http://localhost:8080/
-  - Hiển thị giao diện web với trạng thái tất cả database
-  - Auto-refresh mỗi 30 giây
-  - Responsive design với Bootstrap
+- **Filter SIT**: http://localhost:8080/?env=SIT
+- **Filter UAT**: http://localhost:8080/?env=UAT
 
-### REST API
-- **Status API**: http://localhost:8080/api/status
-  - Trả về JSON với thông tin chi tiết của tất cả database
-  
-- **Health Check**: http://localhost:8080/api/health
-  - Trả về trạng thái tổng thể (UP/DOWN)
+#### API Endpoints
+```bash
+# Tất cả databases
+curl http://localhost:8080/api/status
 
-### Actuator Endpoints
-- **Health**: http://localhost:8080/actuator/health
-- **Info**: http://localhost:8080/actuator/info
+# Chỉ SIT environment
+curl http://localhost:8080/api/status?env=SIT
 
-## Cấu trúc project
+# Chỉ UAT environment  
+curl http://localhost:8080/api/status?env=UAT
 
-```
-src/
-├── main/
-│   ├── java/
-│   │   └── com/example/dbconnectionstatus/
-│   │       ├── config/
-│   │       │   └── DatabaseConfig.java          # Cấu hình multiple datasources
-│   │       ├── controller/
-│   │       │   ├── DatabaseStatusController.java # REST API endpoints
-│   │       │   └── WebController.java           # Web interface controller
-│   │       ├── model/
-│   │       │   └── ConnectionStatus.java        # Model cho connection status
-│   │       ├── service/
-│   │       │   └── DatabaseHealthService.java   # Service kiểm tra health
-│   │       └── DbConnectionStatusApplication.java
-│   └── resources/
-│       ├── application.yml                      # Cấu hình database
-│       └── templates/
-│           └── dashboard.html                   # Giao diện web
-└── pom.xml                                     # Maven dependencies
+# Environment summary
+curl http://localhost:8080/api/summary
+
+# Health check
+curl http://localhost:8080/actuator/health
 ```
 
-## Screenshots API Response
+## 📱 Giao diện Web
 
-### Status API Response
+### Status Bar
+- **Màu xanh**: Tất cả databases connected
+- **Màu đỏ**: Có database disconnected
+- Hiển thị số lượng connected/total cho từng môi trường
+- Hiển thị thời gian cập nhật cuối cùng
+
+### Environment Dropdown
+- **All Environments**: Hiển thị tất cả 6 databases
+- **SIT Environment**: Chỉ hiển thị 3 databases SIT
+- **UAT Environment**: Chỉ hiển thị 3 databases UAT
+
+### Database Cards
+- Badge màu xanh (SIT) hoặc xanh lá (UAT)
+- Icons trạng thái: ✅ Connected, ❌ Disconnected
+- Response time indicators: 🟢 Fast, 🟡 Slow, 🔴 Very Slow
+
+## 🔍 API Response Example
+
 ```json
 {
-  "timestamp": 1703123456789,
+  "timestamp": 1642781234567,
+  "selectedEnvironment": "ALL",
   "databases": [
     {
       "name": "MSSQL Primary (SIT)",
@@ -118,59 +104,85 @@ src/
       "host": "172.20.17.48",
       "database": "",
       "username": "portalusr",
+      "environment": "SIT",
       "connected": true,
       "status": "CONNECTED",
       "errorMessage": null,
-      "lastChecked": "2023-12-21T10:30:45",
-      "responseTimeMs": 125
-    },
-    {
-      "name": "DB2 BOSPROD (SIT)",
-      "type": "DB2",
-      "host": "172.20.17.21",
-      "database": "BOSPROD",
-      "username": "cardpro",
-      "connected": true,
-      "status": "CONNECTED",
-      "errorMessage": null,
-      "lastChecked": "2023-12-21T10:30:45",
-      "responseTimeMs": 89
+      "lastChecked": "2025-01-21T08:44:04.186",
+      "responseTimeMs": 145
     }
   ],
-  "totalDatabases": 3,
-  "connectedDatabases": 2
+  "totalDatabases": 6,
+  "connectedDatabases": 6,
+  "environmentSummary": {
+    "sitConnected": 3,
+    "sitDisconnected": 0,
+    "uatConnected": 3,
+    "uatDisconnected": 0,
+    "totalConnected": 6,
+    "totalDisconnected": 0
+  }
 }
 ```
 
-## Thay đổi môi trường
+## 📁 Cấu trúc dự án
 
-Để thay đổi giữa môi trường SIT và UAT, sửa file `application.yml`:
-
-```yaml
-spring:
-  profiles:
-    active: uat  # Thay đổi thành 'sit' hoặc 'uat'
+```
+db-connection-status/
+├── src/main/java/com/example/dbconnectionstatus/
+│   ├── DbConnectionStatusApplication.java    # Main application
+│   ├── config/DatabaseConfig.java           # Multi-environment datasource config
+│   ├── controller/
+│   │   ├── DatabaseStatusController.java    # REST API với env filtering
+│   │   └── WebController.java              # Web controller với dropdown
+│   ├── model/ConnectionStatus.java          # Model với environment field
+│   └── service/DatabaseHealthService.java   # Service với dual-env support
+├── src/main/resources/
+│   ├── application.yml                      # Simplified configuration
+│   └── templates/dashboard.html            # Enhanced UI với status bar
+├── start.sh                                # Unified startup script
+├── run-sit.sh                              # Legacy script (redirects to start.sh)
+├── run-uat.sh                              # Legacy script (redirects to start.sh)
+├── pom.xml                                 # Maven dependencies
+└── README.md                               # This documentation
 ```
 
-Hoặc sử dụng environment variable:
-```bash
-export SPRING_PROFILES_ACTIVE=uat
-```
+## ⚙️ Technical Stack
 
-## Troubleshooting
+- **Java 21** - Programming language
+- **Spring Boot 3.2.0** - Application framework
+- **Spring JDBC** - Database connectivity
+- **HikariCP** - Connection pooling
+- **Thymeleaf** - Template engine
+- **Bootstrap 5** - UI framework với Font Awesome icons
+- **Maven** - Build tool
+- **Microsoft JDBC Driver** - SQL Server connectivity
+- **IBM DB2 JCC Driver** - DB2 connectivity
 
-1. **Lỗi kết nối database**: Kiểm tra network connectivity và credentials
-2. **Missing driver**: Đảm bảo DB2 và MSSQL drivers được thêm vào classpath
-3. **Memory issues**: Tăng heap size với `-Xmx512m` hoặc cao hơn
+## 🎯 Các thay đổi chính
 
-## Dependencies chính
+### ✅ Hoàn thành
+1. **Multi-Environment Support** - Đồng thời kết nối SIT và UAT
+2. **Environment Dropdown** - UI selector cho SIT/UAT/ALL
+3. **Status Bar** - Real-time overview của tất cả connections
+4. **Enhanced API** - Support environment filtering
+5. **Improved UX** - Visual indicators, animations, responsive design
 
-- Spring Boot 3.2.0
-- Spring Boot Starter Web
-- Spring Boot Starter Data JPA
-- Spring Boot Starter Actuator
-- Spring Boot Starter Thymeleaf
-- Microsoft SQL Server JDBC Driver
-- IBM DB2 JDBC Driver (jcc 11.5.8.0)
-- Bootstrap 5.1.3 (CDN)
-- Font Awesome 6.0.0 (CDN)
+### 🔄 Architecture Changes
+- Loại bỏ Spring Profiles (sit/uat)
+- Tạo datasources cho cả 2 môi trường đồng thời
+- Thêm environment field vào ConnectionStatus model
+- Enhanced service methods cho filtering
+- Cải thiện web interface với status bar
+
+## 🎉 Kết quả
+
+Ứng dụng đã được cập nhật thành công với các tính năng mới:
+- ✅ Monitoring đồng thời cả SIT và UAT environments
+- ✅ Environment dropdown selector
+- ✅ Real-time status bar với color coding
+- ✅ Enhanced API với environment filtering
+- ✅ Improved user experience với visual indicators
+- ✅ Backward compatibility với existing scripts
+
+Ứng dụng sẵn sàng để sử dụng với khả năng monitoring toàn diện cả hai môi trường.
