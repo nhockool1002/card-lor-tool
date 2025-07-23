@@ -27,8 +27,29 @@ venv\Scripts\activate
 
 ### 2. Chạy ứng dụng
 
+#### Cho Windows (Recommended):
+```bash
+# Chạy phiên bản tương thích Windows với auto-fix
+python database_gui_fixed.py
+
+# Hoặc sử dụng batch file
+run_fixed.bat
+```
+
+#### Nếu gặp lỗi tkinter trên Windows:
+```bash
+# Chạy công cụ chẩn đoán trước
+python fix_tkinter.py
+
+# Sau đó chạy ứng dụng
+python database_gui_fixed.py
+```
+
+#### Cho Linux/Mac:
 ```bash
 python database_gui.py
+# hoặc
+./run.sh
 ```
 
 ## Hướng dẫn sử dụng
@@ -82,6 +103,25 @@ python database_gui.py
 - Python 3.7+
 - Tkinter (đã bao gồm trong Python)
 - SQLite3 (đã bao gồm trong Python)
+
+## Khắc phục sự cố
+
+### Lỗi tkinter trên Windows
+Nếu gặp lỗi `_tkinter.TclError: Can't find a usable init.tcl`:
+
+1. **Chạy công cụ chẩn đoán**: `python fix_tkinter.py`
+2. **Sử dụng phiên bản fixed**: `python database_gui_fixed.py`
+3. **Cài đặt lại Python** từ python.org (đảm bảo tick "Add Python to PATH")
+4. **Dùng Anaconda**: `conda install tk`
+5. **Set biến môi trường thủ công**:
+   - TCL_LIBRARY=C:\Python\tcl\tcl8.6
+   - TK_LIBRARY=C:\Python\tcl\tk8.6
+
+### Files trong dự án
+- `database_gui.py`: Phiên bản gốc (Linux/Mac)
+- `database_gui_fixed.py`: Phiên bản tương thích Windows
+- `fix_tkinter.py`: Công cụ chẩn đoán tkinter
+- `run_fixed.bat`: Script chạy cho Windows
 
 ## Ghi chú
 
