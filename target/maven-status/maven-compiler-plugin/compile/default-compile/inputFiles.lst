@@ -1,6 +1,0 @@
-/workspace/src/main/java/com/example/dbconnectionstatus/controller/WebController.java
-/workspace/src/main/java/com/example/dbconnectionstatus/service/DatabaseHealthService.java
-/workspace/src/main/java/com/example/dbconnectionstatus/DbConnectionStatusApplication.java
-/workspace/src/main/java/com/example/dbconnectionstatus/config/DatabaseConfig.java
-/workspace/src/main/java/com/example/dbconnectionstatus/model/ConnectionStatus.java
-/workspace/src/main/java/com/example/dbconnectionstatus/controller/DatabaseStatusController.java
